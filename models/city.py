@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""This is the city class"""
+"""Model for City class."""
 from sqlalchemy.ext.declarative import declarative_base
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, Integer, String
@@ -9,7 +9,7 @@ from models.place import Place
 
 
 class City(BaseModel, Base):
-    """This is the class for City
+    """This is the class representation for City
     Attributes:
         state_id: The state id
         name: input name
