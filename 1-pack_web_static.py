@@ -1,16 +1,24 @@
 #!/usr/bin/python3
-"""This generates a .tgz archive from the contents of the web_static folder."""
+""" fabric script to create an archive of our webstatic directory
+of my AirBnB webstatic directory
+"""
+
+
 from fabric.api import local
-import time
+from datetime import datetime
 
 
 def do_pack():
-    """This generates a tgz archive from web_static folder"""
+    """ function to create an archive """
+
+    time_now = datetime.now()
+    time_str = time_now.strftime("%Y%m%d%H%M%S")
+
     try:
         local("mkdir -p versions")
-        local("tar -cvzf versions/web_static_{}.tgz web_static/".
-              format(time.strftime("%Y%m%d%H%M%S")))
-        return ("versions/web_static_{}.tgz".format(time.
-                                                    strftime("%Y%m%d%H%M%S")))
-    except:
+        local("tar -cvzf versions/web_static_{}.tgz web_static".format
+              (time_str))
+        return ("versions/web_static_{}".format(time_str))
+
+    except Exception as e:
         return None
