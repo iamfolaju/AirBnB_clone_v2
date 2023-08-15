@@ -1,51 +1,60 @@
 #!/usr/bin/python3
-"""This Creates and distributes an archive to web servers"""
-import os.path
-import time
-from fabric.api import local
-from fabric.operations import env, put, run
+from fabric.api import put, run, local, env
+from time import strftime
+from datetime import date
+from os import path
 
-env.hosts = ['100.26.225.174', '18.209.224.170']
+env.hosts = ["54.167.24.215", "54.82.159.235"]
 
 
 def do_pack():
-    """This Generates a tgz archive from web_static folder"""
+    """ A script that generates archive the contents of web_static folder"""
+
+    filename = strftime("%Y%m%d%H%M%S")
     try:
         local("mkdir -p versions")
-        local("tar -cvzf versions/web_static_{}.tgz web_static/".
-              format(time.strftime("%Y%m%d%H%M%S")))
-        return ("versions/web_static_{}.tgz".format(time.
-                                                    strftime("%Y%m%d%H%M%S")))
-    except:
+        local("tar -czvf versions/web_static_{}.tgz web_static/"
+              .format(filename))
+
+        return "versions/web_static_{}.tgz".format(filename)
+
+    except Exception as e:
         return None
 
 
 def do_deploy(archive_path):
-    """This distributes an archive to web servers"""
-    if (os.path.isfile(archive_path) is False):
-        return False
+    """Fabric script that distributes
+    an archive to your web server"""
 
+    if not path.exists(archive_path):
+        return False
     try:
-        file = archive_path.split("/")[-1]
-        folder = ("/data/web_static/releases/" + file.split(".")[0])
-        put(archive_path, "/tmp/")
-        run("mkdir -p {}".format(folder))
-        run("tar -xzf /tmp/{} -C {}".format(file, folder))
-        run("rm /tmp/{}".format(file))
-        run("mv {}/web_static/* {}/".format(folder, folder))
-        run("rm -rf {}/web_static".format(folder))
-        run('rm -rf /data/web_static/current')
-        run("ln -s {} /data/web_static/current".format(folder))
-        print("Deployment done")
+        tgzfile = archive_path.split("/")[-1]
+        print(tgzfile)
+        filename = tgzfile.split(".")[0]
+        print(filename)
+        pathname = "/data/web_static/releases/" + filename
+        put(archive_path, '/tmp/')
+        run("mkdir -p /data/web_static/releases/{}/".format(filename))
+        run("tar -zxvf /tmp/{} -C /data/web_static/releases/{}/"
+            .format(tgzfile, filename))
+        run("rm /tmp/{}".format(tgzfile))
+        run("mv /data/web_static/releases/{}/web_static/*\
+            /data/web_static/releases/{}/".format(filename, filename))
+        run("rm -rf /data/web_static/releases/{}/web_static".format(filename))
+        run("rm -rf /data/web_static/current")
+        run("ln -s /data/web_static/releases/{}/ /data/web_static/current"
+            .format(filename))
         return True
-    except:
+    except Exception as e:
         return False
 
 
 def deploy():
-    """Create and distributes an archive to web servers"""
-    try:
-        path = do_pack()
-        return do_deploy(path)
-    except:
+    """run the 2 functions"""
+
+    path = do_pack()
+    if not path:
         return False
+
+    return do_deploy(path)
