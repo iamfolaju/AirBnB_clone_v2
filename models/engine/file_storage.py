@@ -11,6 +11,7 @@ from models.review import Review
 from models.state import State
 from models.user import User
 
+
 class FileStorage:
 
     """Class for serializtion and deserialization of base classes."""
