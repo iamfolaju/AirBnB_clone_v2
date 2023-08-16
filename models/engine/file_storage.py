@@ -1,104 +1,71 @@
 #!/usr/bin/python3
-"""Module for FileStorage class."""
-import datetime
+"""This module defines a class to manage file storage for hbnb clone"""
 import json
-import os
-from models.base_model import BaseModel
-from models.amenity import Amenity
-from models.city import City
-from models.place import Place
-from models.review import Review
-from models.state import State
-from models.user import User
 
 
 class FileStorage:
-
-    """Class for serializtion and deserialization of base classes."""
-    __file_path = "file.json"
+    """This class manages storage of hbnb models in JSON format"""
+    __file_path = 'file.json'
     __objects = {}
 
-    def all(self):
-        """Returns __objects dictionary."""
-        # TODO: should this be a copy()?
-        return FileStorage.__objects
+    def all(self, cls=None):
+        """Returns a dictionary of models currently in storage"""
+        if cls is None:
+            return FileStorage.__objects
+        cls_name = cls.__name__
+        dct = {}
+        for key in FileStorage.__objects.keys():
+            if key.split('.')[0] == cls_name:
+                dct[key] = self.__objects[key]
+        return dct
 
     def new(self, obj):
-        """Sets new obj in __objects dictionary."""
-        # TODO: should these be more precise specifiers?
-        key = "{}.{}".format(type(obj).__name__, obj.id)
-        FileStorage.__objects[key] = obj
+        """Adds new object to storage dictionary"""
+        self.all().update({obj.to_dict()['__class__'] + '.' + obj.id: obj})
 
     def save(self):
-        """Serialzes __objects to JSON file."""
-        with open(FileStorage.__file_path, "w", encoding="utf-8") as f:
-            d = {k: v.to_dict() for k, v in FileStorage.__objects.items()}
-            json.dump(d, f)
+        """Saves storage dictionary to file"""
+        with open(FileStorage.__file_path, 'w') as f:
+            temp = {}
+            temp.update(FileStorage.__objects)
+            for key, val in temp.items():
+                temp[key] = val.to_dict()
+            json.dump(temp, f)
 
-    def classes(self):
-        """Returns a dictionary of valid classes and their references."""
+    def reload(self):
+        """Loads storage dictionary from file"""
         from models.base_model import BaseModel
         from models.user import User
+        from models.place import Place
         from models.state import State
         from models.city import City
         from models.amenity import Amenity
-        from models.place import Place
         from models.review import Review
 
-        classes = {"BaseModel": BaseModel,
-                   "User": User,
-                   "State": State,
-                   "City": City,
-                   "Amenity": Amenity,
-                   "Place": Place,
-                   "Review": Review}
-        return classes
+        classes = {
+                    'BaseModel': BaseModel, 'User': User, 'Place': Place,
+                    'State': State, 'City': City, 'Amenity': Amenity,
+                    'Review': Review
+                  }
+        try:
+            temp = {}
+            with open(FileStorage.__file_path, 'r') as f:
+                temp = json.load(f)
+                for key, val in temp.items():
+                    self.all()[key] = classes[val['__class__']](**val)
+        except FileNotFoundError:
+            pass
 
-    def reload(self):
-        """Deserializes JSON file into __objects."""
-        if not os.path.isfile(FileStorage.__file_path):
+    def delete(self, obj=None):
+        ''' deletes the object obj from the attribute
+            __objects if it's inside it
+        '''
+        if obj is None:
             return
-        with open(FileStorage.__file_path, "r", encoding="utf-8") as f:
-            obj_dict = json.load(f)
-            obj_dict = {k: self.classes()[v["__class__"]](**v)
-                        for k, v in obj_dict.items()}
-            # TODO: should this overwrite or insert?
-            FileStorage.__objects = obj_dict
+        obj_key = obj.to_dict()['__class__'] + '.' + obj.id
+        if obj_key in self.__objects.keys():
+            del self.__objects[obj_key]
 
-    def attributes(self):
-        """Returns the valid attributes and their types for classname."""
-        attributes = {
-            "BaseModel":
-                     {"id": str,
-                      "created_at": datetime.datetime,
-                      "updated_at": datetime.datetime},
-            "User":
-                     {"email": str,
-                      "password": str,
-                      "first_name": str,
-                      "last_name": str},
-            "State":
-                     {"name": str},
-            "City":
-                     {"state_id": str,
-                      "name": str},
-            "Amenity":
-                     {"name": str},
-            "Place":
-                     {"city_id": str,
-                      "user_id": str,
-                      "name": str,
-                      "description": str,
-                      "number_rooms": int,
-                      "number_bathrooms": int,
-                      "max_guest": int,
-                      "price_by_night": int,
-                      "latitude": float,
-                      "longitude": float,
-                      "amenity_ids": list},
-            "Review":
-            {"place_id": str,
-                         "user_id": str,
-                         "text": str}
-        }
-        return attributes
+    def close(self):
+        '''deserializing the JSON file to objects'''
+        self.reload()
