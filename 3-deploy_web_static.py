@@ -4,7 +4,8 @@ from time import strftime
 from datetime import date
 from os import path
 
-env.hosts = ["100.25.199.43", "54.160.97.52"]
+env.hosts = ["54.167.24.215", "54.82.159.235"]
+
 
 def do_pack():
     """ A script that generates archive the contents of web_static folder"""
